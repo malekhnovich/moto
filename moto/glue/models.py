@@ -16,6 +16,7 @@ from .exceptions import (
     PartitionNotFoundException,
     VersionNotFoundException,
     JobNotFoundException,
+    InvalidInputException
 )
 from ..utilities.paginator import paginate
 
@@ -34,6 +35,7 @@ class GlueBackend(BaseBackend):
         self.databases = OrderedDict()
         self.crawlers = OrderedDict()
         self.jobs = OrderedDict()
+        self.job_runs = OrderedDict()
 
     @staticmethod
     def default_vpc_endpoint_service(service_region, zones):
@@ -202,6 +204,14 @@ class GlueBackend(BaseBackend):
     def get_job(self, name):
         try:
             return self.jobs[name]
+        except KeyError:
+            raise JobNotFoundException(name)
+
+    def get_job_run(self, **kwargs):
+        name = kwargs["JobName"]
+        run_id = kwargs["RunId"]
+        try:
+            return self.job_runs[(name,run_id)]
         except KeyError:
             raise JobNotFoundException(name)
 
@@ -500,6 +510,50 @@ class FakeJob:
             "NotificationProperty": self.notification_property,
             "GlueVersion": self.glue_version,
         }
+
+
+class FakeJobRun:
+    def __init__(self, job_name: str, run_id: str, predecessors_included: bool = None):
+        self.job_name = job_name
+        self.run_id = run_id
+        self.predecessors_included = predecessors_included or None
+        self.started_on = datetime.utcnow()
+        self.last_modified_on = datetime.utcnow()
+        self.completed_on = datetime.utcnow()
+
+    def as_dict(self):
+        return {
+            "Id": "string",
+            "Attempt": 123,
+            "PreviousRunId": self.run_id,
+            "TriggerName": "string",
+            "JobName": self.job_name,
+            "StartedOn": self.started_on.isoformat(),
+            "LastModifiedOn": self.last_modified_on.isoformat(),
+            "CompletedOn": self.completed_on.isoformat(),
+            "JobRunState": "RUNNING",
+            "Arguments": {"string": "string"},
+            "ErrorMessage": "string",
+            "PredecessorRuns": [
+                {"JobName": "string", "RunId": "string"},
+            ],
+            "AllocatedCapacity": 123,
+            "ExecutionTime": 123,
+            "Timeout": 123,
+            "MaxCapacity": 123.0,
+            "WorkerType": "G.2X",
+            "NumberOfWorkers": 123,
+            "SecurityConfiguration": "string",
+            "LogGroupName": "string",
+            "NotificationProperty": {"NotifyDelayAfter": 123},
+            "GlueVersion": "string",
+        }
+    def get_job_run(self, **kwargs):
+        try:
+            response = self.get_job_run(**kwargs)
+            return response
+        except Exception as e:
+            raise InvalidInputException(e)
 
 
 glue_backend = GlueBackend()

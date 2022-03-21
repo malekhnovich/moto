@@ -11,6 +11,34 @@ from botocore.client import ClientError
 from moto import mock_glue
 
 
+job_attributes = {
+    "Description": "test_description",
+    "LogUri": "test_log/",
+    "Role": "test_role",
+    "ExecutionProperty": {"MaxConcurrentRuns": 123},
+    "Command": {
+        "Name": "test_command",
+        "ScriptLocation": "test_s3_path",
+        "PythonVersion": "3.6",
+    },
+    "DefaultArguments": {"string": "string"},
+    "NonOverridableArguments": {"string": "string"},
+    "Connections": {
+        "Connections": [
+            "string",
+        ]
+    },
+    "MaxRetries": 123,
+    "AllocatedCapacity": 123,
+    "Timeout": 123,
+    "MaxCapacity": 123.0,
+    "WorkerType": "G.2X",
+    "NumberOfWorkers": 123,
+    "SecurityConfiguration": "test_config",
+    "NotificationProperty": {"NotifyDelayAfter": 123},
+    "GlueVersion": "string",
+}
+
 @mock_glue
 def test_create_job():
     client = create_glue_client()
@@ -57,33 +85,6 @@ def test_get_job_not_exists():
 @mock_glue
 def test_get_job_exists():
     client = create_glue_client()
-    job_attributes = {
-        "Description": "test_description",
-        "LogUri": "test_log/",
-        "Role": "test_role",
-        "ExecutionProperty": {"MaxConcurrentRuns": 123},
-        "Command": {
-            "Name": "test_command",
-            "ScriptLocation": "test_s3_path",
-            "PythonVersion": "3.6",
-        },
-        "DefaultArguments": {"string": "string"},
-        "NonOverridableArguments": {"string": "string"},
-        "Connections": {
-            "Connections": [
-                "string",
-            ]
-        },
-        "MaxRetries": 123,
-        "AllocatedCapacity": 123,
-        "Timeout": 123,
-        "MaxCapacity": 123.0,
-        "WorkerType": "G.2X",
-        "NumberOfWorkers": 123,
-        "SecurityConfiguration": "test_config",
-        "NotificationProperty": {"NotifyDelayAfter": 123},
-        "GlueVersion": "string",
-    }
     job_name = create_test_job_w_all_attributes(client, **job_attributes)
     response = client.get_job(JobName=job_name)
     assert response["Job"]["Name"] == job_name
@@ -107,6 +108,13 @@ def test_get_job_exists():
     assert response["Job"]["NotificationProperty"]
     assert response["Job"]["GlueVersion"]
 
+@mock_glue
+def test_get_job_run_exists():
+    client = create_glue_client()
+    job_name = create_test_job_w_all_attributes(client,**job_attributes)
+    data = {"JobName":job_name,"RunId":"0"}
+    response = client.get_job_run(**data)
+    assert response
 
 @mock_glue
 def test_list_jobs_with_max_results():

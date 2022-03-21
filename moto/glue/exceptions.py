@@ -73,3 +73,7 @@ class CrawlerRunningException(GlueClientError):
 class CrawlerNotRunningException(GlueClientError):
     def __init__(self, msg):
         super().__init__("CrawlerNotRunningException", msg)
+
+class InvalidInputException(GlueClientError):
+    def __init__(self, msg):
+        super().__init__("InvalidInputException", msg)
